@@ -49,11 +49,17 @@ def parse_row(row):
 
 
 def save_expenses(expenses, path=EXPENSES_FILE):
-    """Write all expenses to the CSV file, with a header row."""
-    with open(path, "w", newline="") as file:
+    """Write all expenses to the CSV file, with a header row.
+
+    We write to a temporary file first, then swap it in with os.replace().
+    If the program crashes mid-write, the old file is left untouched.
+    """
+    temp_path = f"{path}.tmp"
+    with open(temp_path, "w", newline="") as file:
         writer = csv.DictWriter(file, fieldnames=FIELDS)
         writer.writeheader()
         writer.writerows(expenses)
+    os.replace(temp_path, path)
 
 
 # --- Validation: turn user text into clean values, or raise ValueError ---

@@ -4,3 +4,4 @@ __pycache__/
 expenses.csv
 .DS_Store
 CLAUDE.md
+*.tmp

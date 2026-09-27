@@ -115,3 +115,18 @@ def test_load_skips_broken_rows(tmp_path, capsys):
     warnings = capsys.readouterr().out
     for line_number in [3, 4, 5, 6]:
         assert f"line {line_number}" in warnings
+
+
+def test_failed_save_keeps_old_file(tmp_path, monkeypatch):
+    path = tmp_path / "expenses.csv"
+    app.save_expenses(make_expenses(), path)
+
+    # Pretend the program crashes halfway through writing the rows.
+    def crash(self, rows):
+        raise OSError("disk full")
+    monkeypatch.setattr(app.csv.DictWriter, "writerows", crash)
+
+    with pytest.raises(OSError):
+        app.save_expenses([], path)
+    # The old data must still be there, not an empty file.
+    assert app.load_expenses(path) == make_expenses()
