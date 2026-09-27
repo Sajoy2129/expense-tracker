@@ -170,6 +170,16 @@ def ask(prompt, parser):
 
 
 def main():
+    try:
+        run_menu()
+    except (KeyboardInterrupt, EOFError):
+        # Ctrl+C or Ctrl+D: quit cleanly instead of showing a traceback.
+        # Every added expense is already saved, so nothing is lost.
+        print("\nGoodbye!")
+
+
+def run_menu():
+    """Show the menu until the user chooses Quit."""
     expenses = load_expenses()
 
     while True:

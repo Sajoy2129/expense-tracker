@@ -130,3 +130,16 @@ def test_failed_save_keeps_old_file(tmp_path, monkeypatch):
         app.save_expenses([], path)
     # The old data must still be there, not an empty file.
     assert app.load_expenses(path) == make_expenses()
+
+
+@pytest.mark.parametrize("error", [KeyboardInterrupt, EOFError])
+def test_ctrl_c_and_ctrl_d_quit_cleanly(error, tmp_path, monkeypatch, capsys):
+    # Run in a temp folder so the app never touches the real expenses.csv.
+    monkeypatch.chdir(tmp_path)
+
+    def fake_input(prompt):
+        raise error
+    monkeypatch.setattr("builtins.input", fake_input)
+
+    app.main()  # must not raise
+    assert "Goodbye!" in capsys.readouterr().out
