@@ -12,15 +12,40 @@ FIELDS = ["date", "category", "amount", "note"]
 # --- File I/O: the path is a parameter so tests can use a temporary file ---
 
 def load_expenses(path=EXPENSES_FILE):
-    """Read expenses from the CSV file. Return an empty list if there's no file yet."""
+    """Read expenses from the CSV file. Return an empty list if there's no file yet.
+
+    Broken rows (for example after editing the file by hand) are skipped with a
+    warning instead of crashing the app.
+    """
     if not os.path.exists(path):
         return []
+    expenses = []
     with open(path, newline="") as file:
-        expenses = list(csv.DictReader(file))
-    # CSV stores everything as text, so turn amounts back into numbers.
-    for expense in expenses:
-        expense["amount"] = float(expense["amount"])
+        reader = csv.DictReader(file)
+        for row in reader:
+            try:
+                expenses.append(parse_row(row))
+            except ValueError as error:
+                # reader.line_num is the line in the file we just read.
+                print(
+                    f"Skipping line {reader.line_num} of {path}: {error} "
+                    "(it will be removed the next time an expense is saved)"
+                )
     return expenses
+
+
+def parse_row(row):
+    """Turn one CSV row into an expense dict, or raise ValueError if it's broken."""
+    # DictReader fills in None when a row has fewer columns than the header.
+    if any(row.get(field) is None for field in FIELDS):
+        raise ValueError("a column is missing.")
+    return {
+        "date": row["date"],
+        "category": row["category"],
+        # CSV stores everything as text; parse_amount also rejects "", "abc", "nan".
+        "amount": parse_amount(row["amount"]),
+        "note": row["note"],
+    }
 
 
 def save_expenses(expenses, path=EXPENSES_FILE):

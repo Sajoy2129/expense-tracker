@@ -95,3 +95,23 @@ def test_save_then_load_gives_same_expenses(tmp_path):
 
 def test_load_missing_file_returns_empty_list(tmp_path):
     assert app.load_expenses(tmp_path / "nope.csv") == []
+
+
+def test_load_skips_broken_rows(tmp_path, capsys):
+    # Rows a person might create by editing the file by hand.
+    path = tmp_path / "expenses.csv"
+    path.write_text(
+        "date,category,amount,note\n"
+        "2026-09-01,food,12.5,good row\n"
+        "2026-09-02,food,,blank amount\n"
+        "2026-09-03,food,abc,not a number\n"
+        "2026-09-04,food,nan,not a real number\n"
+        "2026-09-05,food\n"
+        "2026-09-06,transport,3,another good row\n"
+    )
+    expenses = app.load_expenses(path)
+    assert [e["note"] for e in expenses] == ["good row", "another good row"]
+    # capsys captures what was printed, so we can check the warnings.
+    warnings = capsys.readouterr().out
+    for line_number in [3, 4, 5, 6]:
+        assert f"line {line_number}" in warnings
