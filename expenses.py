@@ -101,3 +101,81 @@ def total_for_month(expenses, month):
         if expense["date"].startswith(month + "-")
     )
     return round(total, 2)
+
+
+# --- Terminal I/O: printing and asking questions ---
+
+def show_expenses(expenses):
+    """Print every expense as a table, oldest first."""
+    if not expenses:
+        print("No expenses yet.")
+        return
+    print(f"{'Date':<12}{'Category':<15}{'Amount':>10}  Note")
+    for expense in sorted(expenses, key=lambda e: e["date"]):
+        print(
+            f"{expense['date']:<12}{expense['category']:<15}"
+            f"{expense['amount']:>10.2f}  {expense['note']}"
+        )
+
+
+def show_category_totals(expenses):
+    """Print the total for each category, plus a grand total."""
+    totals = total_by_category(expenses)
+    if not totals:
+        print("No expenses yet.")
+        return
+    for category, total in sorted(totals.items()):
+        print(f"{category:<15}{total:>10.2f}")
+    print(f"{'TOTAL':<15}{sum(totals.values()):>10.2f}")
+
+
+def ask(prompt, parser):
+    """Keep asking until `parser` accepts the answer, then return the parsed value."""
+    while True:
+        try:
+            return parser(input(prompt))
+        except ValueError as error:
+            print(error)
+
+
+def main():
+    expenses = load_expenses()
+
+    while True:
+        print()
+        print("=== Expense Tracker ===")
+        print("1. Add an expense")
+        print("2. List all expenses")
+        print("3. Totals by category")
+        print("4. Total for a month")
+        print("5. Quit")
+        choice = input("Choose an option: ").strip()
+
+        if choice == "1":
+            date = ask("Date (YYYY-MM-DD, blank for today): ", parse_date)
+            category = input("Category: ").strip()
+            if not category:
+                print("The category can't be empty.")
+                continue
+            amount = ask("Amount: ", parse_amount)
+            note = input("Note (optional): ")
+            add_expense(expenses, date, category, amount, note)
+            save_expenses(expenses)
+            print(f"Added {amount:.2f} for {category.lower()} on {date}.")
+        elif choice == "2":
+            show_expenses(expenses)
+        elif choice == "3":
+            show_category_totals(expenses)
+        elif choice == "4":
+            month = ask("Month (YYYY-MM): ", parse_month)
+            print(f"Total for {month}: {total_for_month(expenses, month):.2f}")
+        elif choice == "5":
+            print("Goodbye!")
+            break
+        else:
+            print("Please choose 1, 2, 3, 4 or 5.")
+
+
+# Only run the app when this file is run directly (not when tests import it).
+if __name__ == "__main__":
+    main()
