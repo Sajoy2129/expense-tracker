@@ -1,7 +1,34 @@
 """A simple terminal expense tracker. Expenses are saved in expenses.csv."""
 
+import csv
 import datetime
 import math
+import os
+
+EXPENSES_FILE = "expenses.csv"
+FIELDS = ["date", "category", "amount", "note"]
+
+
+# --- File I/O: the path is a parameter so tests can use a temporary file ---
+
+def load_expenses(path=EXPENSES_FILE):
+    """Read expenses from the CSV file. Return an empty list if there's no file yet."""
+    if not os.path.exists(path):
+        return []
+    with open(path, newline="") as file:
+        expenses = list(csv.DictReader(file))
+    # CSV stores everything as text, so turn amounts back into numbers.
+    for expense in expenses:
+        expense["amount"] = float(expense["amount"])
+    return expenses
+
+
+def save_expenses(expenses, path=EXPENSES_FILE):
+    """Write all expenses to the CSV file, with a header row."""
+    with open(path, "w", newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=FIELDS)
+        writer.writeheader()
+        writer.writerows(expenses)
 
 
 # --- Validation: turn user text into clean values, or raise ValueError ---

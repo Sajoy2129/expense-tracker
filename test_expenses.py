@@ -80,3 +80,18 @@ def test_parse_month_accepts_valid_month():
 def test_parse_month_rejects_bad_input(bad_text):
     with pytest.raises(ValueError):
         app.parse_month(bad_text)
+
+
+# --- saving and loading (tmp_path is a temporary folder pytest gives us) ---
+
+def test_save_then_load_gives_same_expenses(tmp_path):
+    path = tmp_path / "expenses.csv"
+    expenses = make_expenses()
+    # A comma inside a note must not split the row into extra columns.
+    expenses[0]["note"] = "lunch, coffee"
+    app.save_expenses(expenses, path)
+    assert app.load_expenses(path) == expenses
+
+
+def test_load_missing_file_returns_empty_list(tmp_path):
+    assert app.load_expenses(tmp_path / "nope.csv") == []
